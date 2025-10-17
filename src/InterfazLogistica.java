@@ -1,152 +1,145 @@
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.util.List;
+import java.awt.event.*;
 
 /**
- * Clase que implementa la interfaz gráfica de usuario para el sistema de logística.
- * Aplica el principio de separación de responsabilidades al separar
- * la lógica de negocio de la interfaz de usuario.
+ * Interfaz gráfica para el sistema de gestión de envíos
+ * Principio S (Single Responsibility): Solo maneja la presentación visual
+ * Principio D (Dependency Inversion): Usa abstracciones (IServicioLogistica)
  */
 public class InterfazLogistica extends JFrame {
+    private final IServicioLogistica servicioLogistica;
     
     // Componentes de la interfaz
-    private JTextField txtCodigo;
-    private JComboBox<String> cmbTipo;
+    private JTextField txtNumero;
     private JTextField txtCliente;
-    private JTextField txtDistancia;
     private JTextField txtPeso;
-    private JButton btnGuardar;
-    private JButton btnCancelar;
-    private JButton btnRetirar;
+    private JTextField txtDistancia;
+    private JComboBox<String> cmbTipo;
     private JTable tablaEnvios;
     private DefaultTableModel modeloTabla;
-    
-    // Lógica de negocio
-    private Logistica logistica;
+    private JButton btnAgregar;
     
     /**
-     * Constructor de la interfaz
+     * Constructor con inyección de dependencias
+     * @param servicioLogistica Servicio de logística
      */
-    public InterfazLogistica() {
-        this.logistica = new Logistica();
+    public InterfazLogistica(IServicioLogistica servicioLogistica) {
+        if (servicioLogistica == null) {
+            throw new IllegalArgumentException("El servicio de logística no puede ser nulo");
+        }
+        this.servicioLogistica = servicioLogistica;
         inicializarComponentes();
         configurarVentana();
-        cargarDatosEjemplo();
+    }
+    
+    /**
+     * Constructor sin parámetros (crea sus propias dependencias)
+     */
+    public InterfazLogistica() {
+        this(new ServicioLogistica(new RepositorioEnvios()));
     }
     
     /**
      * Inicializa todos los componentes de la interfaz
      */
     private void inicializarComponentes() {
-        // Configuración de la ventana
-        setTitle("Operador Logístico");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLayout(new BorderLayout());
+        // Panel principal
+        setLayout(new BorderLayout(10, 10));
         
-        // Panel superior con campos de entrada
-        JPanel panelEntrada = crearPanelEntrada();
-        add(panelEntrada, BorderLayout.NORTH);
+        // Panel superior con iconos y formulario
+        JPanel panelSuperior = new JPanel(new BorderLayout());
         
-        // Panel central con tabla de envíos
-        JPanel panelTabla = crearPanelTabla();
-        add(panelTabla, BorderLayout.CENTER);
+        // Panel de iconos (simulado)
+        JPanel panelIconos = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        panelIconos.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         
-        // Panel inferior con botones adicionales
-        JPanel panelBotones = crearPanelBotones();
-        add(panelBotones, BorderLayout.SOUTH);
-    }
-    
-    /**
-     * Crea el panel con los campos de entrada
-     */
-    private JPanel crearPanelEntrada() {
-        JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBorder(BorderFactory.createTitledBorder("Datos del Envío"));
-        panel.setBackground(new Color(240, 248, 255));
+        JLabel lblAgregar = new JLabel("➕🚚", SwingConstants.CENTER);
+        lblAgregar.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 40));
+        lblAgregar.setBorder(BorderFactory.createLineBorder(Color.GRAY, 2, true));
+        lblAgregar.setPreferredSize(new Dimension(70, 70));
         
+        JLabel lblRetirar = new JLabel("➖🚚", SwingConstants.CENTER);
+        lblRetirar.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 40));
+        lblRetirar.setBorder(BorderFactory.createLineBorder(Color.GRAY, 2, true));
+        lblRetirar.setPreferredSize(new Dimension(70, 70));
+        
+        panelIconos.add(lblAgregar);
+        panelIconos.add(Box.createHorizontalStrut(10));
+        panelIconos.add(lblRetirar);
+        
+        panelSuperior.add(panelIconos, BorderLayout.WEST);
+        
+        // Panel de formulario
+        JPanel panelFormulario = new JPanel(new GridBagLayout());
+        panelFormulario.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
         
-        // Número (Código)
+        // Número
         gbc.gridx = 0; gbc.gridy = 0;
-        panel.add(new JLabel("Número:"), gbc);
+        panelFormulario.add(new JLabel("Número:"), gbc);
         gbc.gridx = 1;
-        txtCodigo = new JTextField(15);
-        txtCodigo.setEditable(false);
-        txtCodigo.setBackground(Color.WHITE);
-        panel.add(txtCodigo, gbc);
+        txtNumero = new JTextField(15);
+        panelFormulario.add(txtNumero, gbc);
         
         // Tipo
         gbc.gridx = 2;
-        panel.add(new JLabel("Tipo:"), gbc);
+        panelFormulario.add(new JLabel("Tipo:"), gbc);
         gbc.gridx = 3;
         cmbTipo = new JComboBox<>(new String[]{"Terrestre", "Aereo", "Maritimo"});
-        cmbTipo.setSelectedIndex(2); // Marítimo por defecto como en la imagen
-        panel.add(cmbTipo, gbc);
+        cmbTipo.setSelectedItem("Maritimo");
+        panelFormulario.add(cmbTipo, gbc);
         
         // Cliente
         gbc.gridx = 0; gbc.gridy = 1;
-        panel.add(new JLabel("Cliente:"), gbc);
+        panelFormulario.add(new JLabel("Cliente:"), gbc);
         gbc.gridx = 1;
-        txtCliente = new JTextField("Cafe de Colombi", 15);
-        panel.add(txtCliente, gbc);
+        txtCliente = new JTextField(15);
+        panelFormulario.add(txtCliente, gbc);
         
-        // Distancia
+        // Distancia en Km
         gbc.gridx = 2;
-        panel.add(new JLabel("Distancia en Km:"), gbc);
+        panelFormulario.add(new JLabel("Distancia en Km:"), gbc);
         gbc.gridx = 3;
-        txtDistancia = new JTextField("3000", 15);
-        panel.add(txtDistancia, gbc);
+        txtDistancia = new JTextField(15);
+        panelFormulario.add(txtDistancia, gbc);
         
         // Peso
         gbc.gridx = 0; gbc.gridy = 2;
-        panel.add(new JLabel("Peso:"), gbc);
+        panelFormulario.add(new JLabel("Peso:"), gbc);
         gbc.gridx = 1;
-        txtPeso = new JTextField("3000", 15);
-        panel.add(txtPeso, gbc);
+        txtPeso = new JTextField(15);
+        panelFormulario.add(txtPeso, gbc);
         
-        // Botones Guardar y Cancelar
-        gbc.gridx = 2; gbc.gridy = 2;
-        btnGuardar = new JButton("Guardar");
-        btnGuardar.setBackground(new Color(144, 238, 144));
-        btnGuardar.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                guardarEnvio();
-            }
-        });
-        panel.add(btnGuardar, gbc);
+        // Botones
+        gbc.gridx = 2; gbc.gridwidth = 2;
+        JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        btnAgregar = new JButton("Guardar");
+        btnAgregar.setBackground(new Color(70, 130, 180));
+        btnAgregar.setForeground(Color.WHITE);
+        btnAgregar.setFocusPainted(false);
         
-        gbc.gridx = 3;
-        btnCancelar = new JButton("Cancelar");
-        btnCancelar.setBackground(new Color(255, 182, 193));
-        btnCancelar.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                limpiarCampos();
-            }
-        });
-        panel.add(btnCancelar, gbc);
+        JButton btnCancelar = new JButton("Cancelar");
+        btnCancelar.setBackground(new Color(180, 180, 180));
+        btnCancelar.setForeground(Color.WHITE);
+        btnCancelar.setFocusPainted(false);
         
-        return panel;
-    }
-    
-    /**
-     * Crea el panel con la tabla de envíos
-     */
-    private JPanel crearPanelTabla() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBorder(BorderFactory.createTitledBorder("Envíos Registrados"));
+        panelBotones.add(btnAgregar);
+        panelBotones.add(btnCancelar);
+        panelFormulario.add(panelBotones, gbc);
         
-        // Configuración de la tabla
+        panelSuperior.add(panelFormulario, BorderLayout.CENTER);
+        add(panelSuperior, BorderLayout.NORTH);
+        
+        // Tabla de envíos
         String[] columnas = {"Tipo", "Código", "Cliente", "Peso", "Distancia", "Costo"};
         modeloTabla = new DefaultTableModel(columnas, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return false; // Tabla de solo lectura
+                return false;
             }
         };
         
@@ -154,189 +147,236 @@ public class InterfazLogistica extends JFrame {
         tablaEnvios.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         tablaEnvios.getTableHeader().setReorderingAllowed(false);
         
-        // Configurar ancho de columnas
+        // Configurar anchos de columnas
         tablaEnvios.getColumnModel().getColumn(0).setPreferredWidth(80);
-        tablaEnvios.getColumnModel().getColumn(1).setPreferredWidth(60);
-        tablaEnvios.getColumnModel().getColumn(2).setPreferredWidth(120);
-        tablaEnvios.getColumnModel().getColumn(3).setPreferredWidth(60);
+        tablaEnvios.getColumnModel().getColumn(1).setPreferredWidth(80);
+        tablaEnvios.getColumnModel().getColumn(2).setPreferredWidth(200);
+        tablaEnvios.getColumnModel().getColumn(3).setPreferredWidth(80);
         tablaEnvios.getColumnModel().getColumn(4).setPreferredWidth(80);
         tablaEnvios.getColumnModel().getColumn(5).setPreferredWidth(100);
         
-        JScrollPane scrollPane = new JScrollPane(tablaEnvios);
-        panel.add(scrollPane, BorderLayout.CENTER);
+        JScrollPane scrollTabla = new JScrollPane(tablaEnvios);
+        scrollTabla.setBorder(BorderFactory.createEmptyBorder(0, 10, 10, 10));
+        add(scrollTabla, BorderLayout.CENTER);
         
-        return panel;
+        // Configurar eventos
+        configurarEventos(btnCancelar);
     }
     
     /**
-     * Crea el panel con botones adicionales
+     * Configura los eventos de los botones
      */
-    private JPanel crearPanelBotones() {
-        JPanel panel = new JPanel(new FlowLayout());
-        panel.setBackground(new Color(240, 248, 255));
-        
-        btnRetirar = new JButton("Retirar Envío Seleccionado");
-        btnRetirar.setBackground(new Color(255, 165, 0));
-        btnRetirar.addActionListener(new ActionListener() {
+    private void configurarEventos(JButton btnCancelar) {
+        // Botón Agregar
+        btnAgregar.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                retirarEnvio();
+                agregarEnvio();
             }
         });
-        panel.add(btnRetirar);
         
-        JButton btnReporte = new JButton("Generar Reporte");
-        btnReporte.setBackground(new Color(135, 206, 250));
-        btnReporte.addActionListener(new ActionListener() {
+        // Botón Cancelar
+        btnCancelar.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                mostrarReporte();
+                limpiarFormulario();
             }
         });
-        panel.add(btnReporte);
         
-        return panel;
+        // Doble click en tabla para eliminar
+        tablaEnvios.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    retirarEnvioSeleccionado();
+                }
+            }
+        });
     }
     
     /**
-     * Configura las propiedades de la ventana
+     * Agrega un nuevo envío
      */
-    private void configurarVentana() {
-        setSize(800, 600);
-        setLocationRelativeTo(null);
-        setResizable(true);
-        
-        // Icono de la ventana (simulado con texto)
-        setIconImage(new ImageIcon().getImage());
-    }
-    
-    /**
-     * Carga datos de ejemplo como se muestra en la imagen
-     */
-    private void cargarDatosEjemplo() {
-        // Datos de ejemplo basados en la imagen
-        logistica.agregarEnvio("Terrestre", "Polimeros Col...", 1200.0, 400.0);
-        logistica.agregarEnvio("Terrestre", "Textiles Pepalfa", 500.0, 600.0);
-        logistica.agregarEnvio("Aereo", "Flores Colombi...", 1500.0, 2000.0);
-        
-        actualizarTabla();
-    }
-    
-    /**
-     * Guarda un nuevo envío
-     */
-    private void guardarEnvio() {
+    private void agregarEnvio() {
         try {
-            String tipo = (String) cmbTipo.getSelectedItem();
+            String numero = txtNumero.getText().trim();
             String cliente = txtCliente.getText().trim();
-            double peso = Double.parseDouble(txtPeso.getText().trim());
-            double distancia = Double.parseDouble(txtDistancia.getText().trim());
+            String pesoStr = txtPeso.getText().trim();
+            String distanciaStr = txtDistancia.getText().trim();
+            String tipo = (String) cmbTipo.getSelectedItem();
             
-            if (cliente.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "El campo Cliente es obligatorio.", 
-                    "Error", JOptionPane.ERROR_MESSAGE);
+            // Validaciones
+            if (numero.isEmpty() || cliente.isEmpty() || pesoStr.isEmpty() || distanciaStr.isEmpty()) {
+                JOptionPane.showMessageDialog(this, 
+                    "Todos los campos son obligatorios", 
+                    "Error", 
+                    JOptionPane.ERROR_MESSAGE);
                 return;
             }
+            
+            double peso = Double.parseDouble(pesoStr);
+            double distancia = Double.parseDouble(distanciaStr);
             
             if (peso <= 0 || distancia <= 0) {
-                JOptionPane.showMessageDialog(this, "El peso y la distancia deben ser valores positivos.", 
-                    "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, 
+                    "El peso y la distancia deben ser mayores a cero", 
+                    "Error", 
+                    JOptionPane.ERROR_MESSAGE);
                 return;
             }
             
-            boolean agregado = logistica.agregarEnvio(tipo, cliente, peso, distancia);
+            // Crear envío usando la fábrica (DRY principle)
+            Envio nuevoEnvio;
+            try {
+                nuevoEnvio = FabricaEnvios.crearEnvioDesdeString(tipo, cliente, numero, peso, distancia);
+            } catch (IllegalArgumentException ex) {
+                JOptionPane.showMessageDialog(this, 
+                    "Error al crear envío: " + ex.getMessage(), 
+                    "Error", 
+                    JOptionPane.ERROR_MESSAGE);
+                return;
+            }
             
-            if (agregado) {
-                JOptionPane.showMessageDialog(this, "Envío agregado exitosamente.", 
-                    "Éxito", JOptionPane.INFORMATION_MESSAGE);
-                actualizarTabla();
-                limpiarCampos();
+            // Agregar al servicio de logística
+            if (servicioLogistica.agregarEnvio(nuevoEnvio)) {
+                // Agregar a la tabla
+                modeloTabla.addRow(new Object[]{
+                    nuevoEnvio.getTipoEnvio(),
+                    nuevoEnvio.getCodigoEnvio(),
+                    nuevoEnvio.getCliente(),
+                    String.format("%.1f", nuevoEnvio.getPesoKg()),
+                    String.format("%.1f", nuevoEnvio.getDistanciaKm()),
+                    String.format("%.1f", nuevoEnvio.getCosto())
+                });
+                
+                limpiarFormulario();
+                JOptionPane.showMessageDialog(this, 
+                    "Envío agregado exitosamente", 
+                    "Éxito", 
+                    JOptionPane.INFORMATION_MESSAGE);
             } else {
-                JOptionPane.showMessageDialog(this, "Error al agregar el envío.", 
-                    "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, 
+                    "Ya existe un envío con el código " + numero, 
+                    "Error", 
+                    JOptionPane.ERROR_MESSAGE);
             }
             
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Por favor ingrese valores numéricos válidos para peso y distancia.", 
-                "Error de formato", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, 
+                "El peso y la distancia deben ser números válidos", 
+                "Error", 
+                JOptionPane.ERROR_MESSAGE);
         }
     }
     
     /**
-     * Retira el envío seleccionado
+     * Retira el envío seleccionado en la tabla
      */
-    private void retirarEnvio() {
+    private void retirarEnvioSeleccionado() {
         int filaSeleccionada = tablaEnvios.getSelectedRow();
         
-        if (filaSeleccionada == -1) {
-            JOptionPane.showMessageDialog(this, "Por favor seleccione un envío para retirar.", 
-                "Advertencia", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-        
-        String codigo = (String) modeloTabla.getValueAt(filaSeleccionada, 1);
-        
-        int confirmacion = JOptionPane.showConfirmDialog(this, 
-            "¿Está seguro de que desea retirar el envío con código " + codigo + "?", 
-            "Confirmar eliminación", JOptionPane.YES_NO_OPTION);
-        
-        if (confirmacion == JOptionPane.YES_OPTION) {
-            boolean retirado = logistica.retirarEnvio(codigo);
+        if (filaSeleccionada >= 0) {
+            String codigo = (String) modeloTabla.getValueAt(filaSeleccionada, 1);
             
-            if (retirado) {
-                JOptionPane.showMessageDialog(this, "Envío retirado exitosamente.", 
-                    "Éxito", JOptionPane.INFORMATION_MESSAGE);
-                actualizarTabla();
-            } else {
-                JOptionPane.showMessageDialog(this, "Error al retirar el envío.", 
-                    "Error", JOptionPane.ERROR_MESSAGE);
+            int confirmacion = JOptionPane.showConfirmDialog(this, 
+                "¿Está seguro de que desea retirar el envío " + codigo + "?", 
+                "Confirmar", 
+                JOptionPane.YES_NO_OPTION);
+            
+            if (confirmacion == JOptionPane.YES_OPTION) {
+                if (servicioLogistica.retirarEnvio(codigo)) {
+                    modeloTabla.removeRow(filaSeleccionada);
+                    JOptionPane.showMessageDialog(this, 
+                        "Envío retirado exitosamente", 
+                        "Éxito", 
+                        JOptionPane.INFORMATION_MESSAGE);
+                }
             }
+        } else {
+            JOptionPane.showMessageDialog(this, 
+                "Seleccione un envío de la tabla", 
+                "Información", 
+                JOptionPane.INFORMATION_MESSAGE);
         }
     }
     
     /**
-     * Actualiza la tabla con los datos actuales
+     * Limpia el formulario
      */
-    private void actualizarTabla() {
-        modeloTabla.setRowCount(0); // Limpiar tabla
-        
-        List<Envio> envios = logistica.listarEnvios();
-        for (Envio envio : envios) {
-            Object[] fila = {
-                envio.getTipo(),
-                envio.getCodigo(),
-                envio.getCliente(),
-                envio.getPeso(),
-                envio.getDistancia(),
-                envio.calcularTarifa()
-            };
-            modeloTabla.addRow(fila);
-        }
-    }
-    
-    /**
-     * Muestra el reporte de envíos
-     */
-    private void mostrarReporte() {
-        String reporte = logistica.generarReporte();
-        JTextArea areaTexto = new JTextArea(reporte);
-        areaTexto.setEditable(false);
-        areaTexto.setFont(new Font("Monospaced", Font.PLAIN, 12));
-        
-        JScrollPane scrollPane = new JScrollPane(areaTexto);
-        scrollPane.setPreferredSize(new Dimension(600, 400));
-        
-        JOptionPane.showMessageDialog(this, scrollPane, "Reporte de Envíos", 
-            JOptionPane.INFORMATION_MESSAGE);
-    }
-    
-    /**
-     * Limpia los campos de entrada
-     */
-    private void limpiarCampos() {
+    private void limpiarFormulario() {
+        txtNumero.setText("");
         txtCliente.setText("");
         txtPeso.setText("");
         txtDistancia.setText("");
-        cmbTipo.setSelectedIndex(2); // Marítimo por defecto
+        cmbTipo.setSelectedIndex(0);
+        txtNumero.requestFocus();
+    }
+    
+    /**
+     * Configura la ventana principal
+     */
+    private void configurarVentana() {
+        setTitle("Operador Logístico");
+        setSize(700, 500);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        setResizable(true);
+        
+        // Agregar datos de ejemplo
+        agregarDatosEjemplo();
+    }
+    
+    /**
+     * Agrega datos de ejemplo a la tabla
+     */
+    private void agregarDatosEjemplo() {
+        Envio e1 = new Terrestre("Polímeros Col...", "10001", 1200.0, 400.0);
+        Envio e2 = new Terrestre("Textiles Peñalta", "10002", 500.0, 600.0);
+        Envio e3 = new Aereo("Flores Colombi...", "10003", 1500.0, 2000.0);
+        
+        servicioLogistica.agregarEnvio(e1);
+        servicioLogistica.agregarEnvio(e2);
+        servicioLogistica.agregarEnvio(e3);
+        
+        modeloTabla.addRow(new Object[]{
+            e1.getTipoEnvio(), e1.getCodigoEnvio(), e1.getCliente(),
+            String.format("%.1f", e1.getPesoKg()),
+            String.format("%.1f", e1.getDistanciaKm()),
+            String.format("%.1f", e1.getCosto())
+        });
+        
+        modeloTabla.addRow(new Object[]{
+            e2.getTipoEnvio(), e2.getCodigoEnvio(), e2.getCliente(),
+            String.format("%.1f", e2.getPesoKg()),
+            String.format("%.1f", e2.getDistanciaKm()),
+            String.format("%.1f", e2.getCosto())
+        });
+        
+        modeloTabla.addRow(new Object[]{
+            e3.getTipoEnvio(), e3.getCodigoEnvio(), e3.getCliente(),
+            String.format("%.1f", e3.getPesoKg()),
+            String.format("%.1f", e3.getDistanciaKm()),
+            String.format("%.1f", e3.getCosto())
+        });
+    }
+    
+    /**
+     * Método principal
+     */
+    public static void main(String[] args) {
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                InterfazLogistica ventana = new InterfazLogistica();
+                ventana.setVisible(true);
+            }
+        });
     }
 }
+

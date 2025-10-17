@@ -1,65 +1,84 @@
 /**
- * Clase abstracta que representa un envío genérico.
- * Implementa el principio de responsabilidad única (SRP) al definir
- * la estructura común para todos los tipos de envío.
+ * Clase abstracta base para representar un envío
+ * Contiene los atributos comunes a todos los tipos de envío
+ * Principio S (Single Responsibility): Solo maneja datos de envío
+ * Principio L (Liskov Substitution): Puede ser sustituida por cualquier subtipo
  */
-public abstract class Envio {
-    // Atributos privados para implementar encapsulamiento
-    private String codigo;
-    private String cliente;
-    private double peso;
-    private double distancia;
+public abstract class Envio implements ICalculadoraTarifa {
+    protected String cliente;
+    protected String codigoEnvio;
+    protected double pesoKg;
+    protected double distanciaKm;
     
     /**
-     * Constructor de la clase Envio
-     * @param codigo Código único del envío
-     * @param cliente Nombre del cliente
-     * @param peso Peso en kilogramos
-     * @param distancia Distancia en kilómetros
+     * Constructor de Envio
+     * @param cliente Nombre del remitente
+     * @param codigoEnvio Código único del envío
+     * @param pesoKg Peso en kilogramos
+     * @param distanciaKm Distancia en kilómetros
      */
-    public Envio(String codigo, String cliente, double peso, double distancia) {
-        this.codigo = codigo;
+    public Envio(String cliente, String codigoEnvio, double pesoKg, double distanciaKm) {
         this.cliente = cliente;
-        this.peso = peso;
-        this.distancia = distancia;
-    }
-    
-    // Getters para acceder a los atributos privados
-    public String getCodigo() {
-        return codigo;
-    }
-    
-    public String getCliente() {
-        return cliente;
-    }
-    
-    public double getPeso() {
-        return peso;
-    }
-    
-    public double getDistancia() {
-        return distancia;
+        this.codigoEnvio = codigoEnvio;
+        this.pesoKg = pesoKg;
+        this.distanciaKm = distanciaKm;
     }
     
     /**
-     * Método abstracto para calcular la tarifa.
-     * Cada tipo de envío implementará su propia lógica de cálculo.
-     * Aplica el principio de polimorfismo.
-     * @return Costo total del envío
+     * Método abstracto para calcular la tarifa del envío
+     * Cada tipo de envío implementará su propia lógica
+     * @return Tarifa total del envío
      */
     public abstract double calcularTarifa();
     
     /**
-     * Método para obtener el tipo de envío
-     * @return Nombre de la clase (tipo de envío)
+     * Obtiene el costo del envío (alias de calcularTarifa)
+     * @return Costo total del envío
      */
-    public String getTipo() {
-        return this.getClass().getSimpleName();
+    public double getCosto() {
+        return calcularTarifa();
+    }
+    
+    /**
+     * Método abstracto para obtener el tipo de envío
+     * @return String con el tipo de envío
+     */
+    public abstract String getTipoEnvio();
+    
+    // Getters
+    public String getCliente() {
+        return cliente;
+    }
+    
+    public String getCodigoEnvio() {
+        return codigoEnvio;
+    }
+    
+    public double getPesoKg() {
+        return pesoKg;
+    }
+    
+    public double getDistanciaKm() {
+        return distanciaKm;
+    }
+    
+    // Setters
+    public void setCliente(String cliente) {
+        this.cliente = cliente;
+    }
+    
+    public void setPesoKg(double pesoKg) {
+        this.pesoKg = pesoKg;
+    }
+    
+    public void setDistanciaKm(double distanciaKm) {
+        this.distanciaKm = distanciaKm;
     }
     
     @Override
     public String toString() {
-        return String.format("%s | %s | %s | %.1f | %.1f | %.1f",
-                getTipo(), codigo, cliente, peso, distancia, calcularTarifa());
+        return String.format("Tipo: %s | Código: %s | Cliente: %s | Peso: %.1f kg | Distancia: %.1f km | Costo: $%.1f",
+                getTipoEnvio(), codigoEnvio, cliente, pesoKg, distanciaKm, getCosto());
     }
 }
+

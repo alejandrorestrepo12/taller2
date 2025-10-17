@@ -1,32 +1,34 @@
 /**
- * Clase que representa un envío terrestre.
- * Implementa el principio de sustitución de Liskov (LSP) ya que
- * puede ser usada como un Envio sin alterar el comportamiento esperado.
+ * Clase que representa un envío terrestre
+ * Tarifa base: $1500 por km
+ * Recargo: $2000 por kg
+ * Principio S (Single Responsibility): Solo maneja lógica de envío terrestre
+ * Principio O (Open/Closed): Extiende sin modificar la clase base
+ * Principio L (Liskov Substitution): Sustituible por Envio
  */
 public class Terrestre extends Envio {
-    
-    // Constantes para el cálculo de tarifa (principio DRY)
     private static final double TARIFA_BASE_POR_KM = 1500.0;
     private static final double RECARGO_POR_KG = 2000.0;
     
     /**
-     * Constructor de la clase Terrestre
-     * @param codigo Código único del envío
-     * @param cliente Nombre del cliente
-     * @param peso Peso en kilogramos
-     * @param distancia Distancia en kilómetros
+     * Constructor de Envio Terrestre
+     * @param cliente Nombre del remitente
+     * @param codigoEnvio Código único del envío
+     * @param pesoKg Peso en kilogramos
+     * @param distanciaKm Distancia en kilómetros
      */
-    public Terrestre(String codigo, String cliente, double peso, double distancia) {
-        super(codigo, cliente, peso, distancia);
+    public Terrestre(String cliente, String codigoEnvio, double pesoKg, double distanciaKm) {
+        super(cliente, codigoEnvio, pesoKg, distanciaKm);
     }
     
-    /**
-     * Implementa el cálculo de tarifa específico para envíos terrestres.
-     * Aplica el principio de polimorfismo al sobrescribir el método abstracto.
-     * @return Costo total del envío terrestre
-     */
     @Override
     public double calcularTarifa() {
-        return (getDistancia() * TARIFA_BASE_POR_KM) + (getPeso() * RECARGO_POR_KG);
+        return (TARIFA_BASE_POR_KM * distanciaKm) + (RECARGO_POR_KG * pesoKg);
+    }
+    
+    @Override
+    public String getTipoEnvio() {
+        return "Terrestre";
     }
 }
+
